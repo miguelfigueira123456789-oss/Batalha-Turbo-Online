@@ -9,4 +9,4 @@ for(const [name,data] of Object.entries(files)){
  fs.writeFileSync(dest,Buffer.from(data,'base64'));
 }
 console.log('Batalha Turbo: extraídos '+Object.keys(files).length+' ficheiros');
-require('./patch3d/apply.js');
+// Versão Anime 2D: conservar os ficheiros do pacote sem reaplicar a antiga versão 3D.
