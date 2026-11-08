@@ -1,0 +1,40 @@
+name: Gerar APK Android
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      server_url:
+        description: "URL HTTPS do jogo publicado"
+        required: false
+        type: string
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extrair código do jogo
+        run: node unpack.js
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Instalar Android SDK
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Compilar APK
+        env:
+          GAME_URL: ${{ github.event.inputs.server_url || 'https://batalha-turbo-online.onrender.com' }}
+        run: |
+          cd android
+          gradle --no-daemon assembleDebug "-PgameUrl=$GAME_URL"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Batalha-Turbo-Android-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
