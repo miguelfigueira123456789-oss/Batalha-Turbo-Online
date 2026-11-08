@@ -9,7 +9,7 @@ on:
         required: false
         type: string
 permissions:
-  contents: read
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,12 +21,13 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
       - name: Instalar Android SDK
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+        run: |
+          yes | sdkmanager --licenses > /dev/null
+          sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
       - name: Compilar APK
         env:
           GAME_URL: ${{ github.event.inputs.server_url || 'https://batalha-turbo-online.onrender.com' }}
@@ -38,3 +39,13 @@ jobs:
           name: Batalha-Turbo-Android-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+      - name: Publicar APK para instalar no Android
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk Batalha-Turbo-Android.apk
+          if gh release view v1.0.0-beta >/dev/null 2>&1; then
+            gh release upload v1.0.0-beta Batalha-Turbo-Android.apk --clobber
+          else
+            gh release create v1.0.0-beta Batalha-Turbo-Android.apk --title "Batalha Turbo para Android (beta)" --notes "APK de teste. Instalar manualmente no Android. Necessita de Internet e servidor online." --prerelease --target "$GITHUB_SHA"
+          fi
